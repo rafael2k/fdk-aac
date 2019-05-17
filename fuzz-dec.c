@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "aacdecoder_lib.h"
+#ifdef HAVE_LIBAVCODEC
+#include <libavcodec/avcodec.h>
+#endif
 
 static const uint8_t tag[] = "FUZZ-TAG";
 
@@ -18,6 +21,19 @@ static void test(const uint8_t *ptr, int size) {
 	aacDecoder_SetParam(decoder, AAC_CONCEAL_METHOD, 1);
 	aacDecoder_SetParam(decoder, AAC_PCM_LIMITER_ENABLE, 0);
 
+#ifdef HAVE_LIBAVCODEC
+	AVCodecParserContext *parser = NULL;
+	AVCodecContext *avctx = NULL;
+	if (size > 1024) {
+		const uint8_t* params = ptr + size - 1024;
+		params += 20; // width, height, bit_rate, bits_per_coded_sample
+		if (*params & 1) {
+			parser = av_parser_init(AV_CODEC_ID_AAC);
+			avctx = avcodec_alloc_context3(NULL);
+		}
+	}
+#endif
+
 	while (1) {
 		const uint8_t* start = ptr;
 		UINT valid, buffer_size;
@@ -31,19 +47,34 @@ static void test(const uint8_t *ptr, int size) {
 		if (ptr + tagsize > end)
 			ptr = end;
 
-		do {
-			valid = buffer_size = ptr - start;
-			err = aacDecoder_Fill(decoder, (UCHAR**) &start, &buffer_size, &valid);
-			start += buffer_size - valid;
-			if (err == AAC_DEC_NOT_ENOUGH_BITS)
-				continue;
-			if (err == AAC_DEC_OK)
-				err = aacDecoder_DecodeFrame(decoder, (INT_PCM *) decoder_buffer, decoder_buffer_size / sizeof(INT_PCM), 0);
-			if (err != AAC_DEC_NOT_ENOUGH_BITS && err != AAC_DEC_OK)
-				break;
-		} while (start < ptr);
 
-		aacDecoder_GetStreamInfo(decoder);
+		while (start < ptr) {
+			const uint8_t *input = start;
+			const uint8_t *inputend = ptr;
+#ifdef HAVE_LIBAVCODEC
+			if (parser) {
+				int parse_size;
+				int ret = av_parser_parse2(parser, avctx, (uint8_t**) &input, &parse_size, start, ptr - start, 0, 0, 0);
+				start += ret;
+				inputend = input + parse_size;
+			} else
+#endif
+				start = ptr;
+
+			while (input && input < inputend) {
+				valid = buffer_size = inputend - input;
+				err = aacDecoder_Fill(decoder, (UCHAR**) &input, &buffer_size, &valid);
+				input += buffer_size - valid;
+				if (err == AAC_DEC_NOT_ENOUGH_BITS)
+					continue;
+				if (err == AAC_DEC_OK)
+					err = aacDecoder_DecodeFrame(decoder, (INT_PCM *) decoder_buffer, decoder_buffer_size / sizeof(INT_PCM), 0);
+				if (err != AAC_DEC_NOT_ENOUGH_BITS && err != AAC_DEC_OK)
+					break;
+			}
+
+			aacDecoder_GetStreamInfo(decoder);
+		}
 
 		if (ptr + tagsize <= end) {
 			ptr += tagsize;
@@ -63,12 +94,22 @@ static void test(const uint8_t *ptr, int size) {
 	}
 	free(decoder_buffer);
 	aacDecoder_Close(decoder);
+#ifdef HAVE_LIBAVCODEC
+	if (parser) {
+		av_parser_close(parser);
+		avcodec_free_context(&avctx);
+	}
+#endif
 }
 
 int main(int argc, char *argv[]) {
 	FILE *f;
 	int size;
 	uint8_t *buf;
+
+#ifdef HAVE_LIBAVCODEC
+	avcodec_register_all();
+#endif
 
 	if (argc < 2) {
 		printf("%s file\n", argv[0]);
