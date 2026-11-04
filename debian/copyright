@@ -7,7 +7,27 @@ Copyright:
   1995 - 2015 Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e. V.
 License: Fraunhofer-FDK-AAC-for-Android 
 
-Files: aac-enc.* wavreader.*
+Files: cpp/libAACenc/src/aacenc_hcr.*
+Copyright:
+  2026 Dream (Drm-tools) contributors
+License: Fraunhofer-FDK-AAC-for-Android
+ The DRM AAC encoder additions are distributed under the same Fraunhofer FDK AAC
+ Codec licence as the rest of the library. The 960 sample transform tables follow the
+ patches of OpenDigitalRadio (ODR-AudioEnc) to fdk-aac 2.0.x.
+
+Files: xhe-aac/*
+Copyright:
+  1995 - 2025 Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e. V. and Contributors
+License: Fraunhofer-FDK-xHE-AAC-for-Android
+ See xhe-aac/NOTICE for the full licence text (similar to the Fraunhofer FDK AAC Codec
+ licence below: source and binary redistribution with conditions, no patent licence).
+
+Files: xhe-aac-enc.c
+Copyright:
+  2026 Martin Storsjo
+License: Apache-2.0
+
+Files: aac-enc.* aac-dec.* wavreader.* wavwriter.*
 Copyright:
   2009, 2011 Martin Storsjo
 License: Apache-2.0
