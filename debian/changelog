@@ -4,6 +4,9 @@ fdk-aac (3.0.0+xhe-1) unstable; urgency=medium
   * Build with CMake, ship libfdk-xhe-aac0 and libfdk-xhe-aac-dev, aac-dec and
     xhe-aac-enc in aac-enc.
   * Lower the minimum xHE-AAC bit rate (mono 6 kbit/s, stereo 12 kbit/s).
+  * Add DRM AAC, HE-AAC and HE-AAC v2 encoding to libfdk-aac (AOT_DRM_AAC,
+    AOT_DRM_SBR, AOT_DRM_MPEG_PS: 960 transform, HCR, VCB11, DRM CRC, reversed
+    SBR payload), see README.DRM.md.
   * Use debhelper-compat 13, drop debian/compat.
 
  -- Rafael Diniz <rafael@riseup.net>  Wed, 04 Nov 2026 12:00:00 -0300
